@@ -1,0 +1,25 @@
+{
+  "subject": "biology",
+  "grades": {
+    "9": {
+      "units": [
+        {
+          "unit_title": "Cell Biology",
+          "sub_units": [
+            {
+              "sub_unit_title": "Cell Structure and Function",
+              "objectives": [
+                "Identify cell organelles and their functions",
+                "Compare plant and animal cells"
+              ],
+              "key_concepts": ["mitochondria", "nucleus", "chloroplast", "membrane"],
+              "bloom_levels": ["Remember", "Understand"],
+              "question_patterns": ["function of", "structure of", "difference between"],
+              "ethiopian_context": ["cells in coffee plants", "teff grain structure"]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

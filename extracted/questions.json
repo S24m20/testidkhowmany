@@ -1,0 +1,14 @@
+{
+  "questions": [
+    {
+      "question_text": "Which organelle is known as the powerhouse of the cell?",
+      "options": ["Nucleus", "Mitochondria", "Ribosome", "Endoplasmic Reticulum"],
+      "correct_answer": "B",
+      "explanation": "Mitochondria produce ATP through cellular respiration.",
+      "subject": "biology",
+      "difficulty": "medium",
+      "bloom_level": "Remember",
+      "source": "ethiopian_textbook_grade_9"
+    }
+  ]
+}

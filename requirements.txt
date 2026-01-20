@@ -1,0 +1,9 @@
+streamlit
+python-telegram-bot
+sentence-transformers
+pandas
+plotly
+numpy
+scipy
+torch
+transformers
