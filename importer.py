@@ -25,9 +25,11 @@ def import_questions_from_file(filepath):
             for question_data in questions:
                 # Try to infer subject from filename if not present in data
                 if 'subject' not in question_data:
-                    filename_subject = os.path.basename(filepath).split('_')[0].lower()
+                    basename = os.path.basename(filepath)
+                    filename_without_ext = os.path.splitext(basename)[0]
+                    filename_subject = filename_without_ext.split('_')[0].lower()
                     if filename_subject in ['biology', 'chemistry', 'physics', 'mathematics']:
-                         question_data['subject'] = filename_subject
+                        question_data['subject'] = filename_subject
 
                 question_data['source_filename'] = os.path.basename(filepath)
                 if add_question(question_data):

@@ -116,7 +116,7 @@ def main():
             update_question_manual(question_id_to_edit, update_data)
             st.success(f"Question {question_id_to_edit} updated successfully!")
             # Refresh the page to show the updated data
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.info("Enter a valid Question ID from the table above to start editing.")
 
