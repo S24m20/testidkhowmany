@@ -6,7 +6,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
-    PollHandler,
+    PollAnswerHandler,
     filters,
 )
 from config import TELEGRAM_BOT_TOKEN
@@ -111,36 +111,50 @@ async def ask_question(context: ContextTypes.DEFAULT_TYPE) -> int:
 
     question = questions[current_question_index]
     options = json.loads(question['options'])
+    correct_option_id = ord(question['correct_answer'].upper()) - ord('A')
 
     await context.bot.send_message(chat_id, question['question_text'])
 
-    # Send the poll
-    await context.bot.send_poll(
+    # Send the poll and store the correct answer ID
+    message = await context.bot.send_poll(
         chat_id,
         "Choose the correct answer:",
         options,
         is_anonymous=False,
         type="quiz",
-        correct_option_id=ord(question['correct_answer'].upper()) - ord('A')
+        correct_option_id=correct_option_id
     )
+
+    # Store the correct answer ID in bot_data for later verification
+    if not hasattr(context.bot_data, 'poll_answers'):
+        context.bot_data.poll_answers = {}
+    context.bot_data.poll_answers[message.poll.id] = correct_option_id
 
     return QUIZ
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the user's answer to a quiz question."""
+    """Handles the user's answer to a quiz question via PollAnswer."""
+    poll_answer = update.poll_answer
+    poll_id = poll_answer.poll_id
 
-    correct_option = update.poll.correct_option_id
-    selected_option = -1
-    for i, option in enumerate(update.poll.options):
-        if option.voter_count > 0:
-            selected_option = i
-            break
+    # Retrieve the correct answer ID from bot_data
+    correct_option_id = context.bot_data.poll_answers.get(poll_id)
 
-    if selected_option == correct_option:
+    if correct_option_id is None:
+        logger.warning(f"Could not find correct answer for poll_id: {poll_id}")
+        return QUIZ # Stay in the same state, maybe log this error
+
+    selected_option_id = poll_answer.option_ids[0]
+
+    if selected_option_id == correct_option_id:
         context.user_data["score"] += 1
 
     context.user_data["current_question"] += 1
+
+    # Clean up the stored answer to prevent memory bloat
+    del context.bot_data.poll_answers[poll_id]
+
     return await ask_question(context)
 
 async def end_quiz(context: ContextTypes.DEFAULT_TYPE, telegram_id: int) -> int:
@@ -179,7 +193,7 @@ def main() -> None:
             SUBJECT: [MessageHandler(filters.TEXT & ~filters.COMMAND, subject)],
             GRADE: [MessageHandler(filters.TEXT & ~filters.COMMAND, grade)],
             UNIT: [MessageHandler(filters.TEXT & ~filters.COMMAND, unit)],
-            QUIZ: [PollHandler(handle_answer)],
+            QUIZ: [PollAnswerHandler(handle_answer)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )

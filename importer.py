@@ -5,14 +5,30 @@ from database import add_question
 from config import EXTRACTED_FOLDER
 
 def import_questions_from_file(filepath):
-    """Imports questions from a single JSON file."""
+    """Imports questions from a single JSON file, supporting multiple formats."""
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            questions = data.get('questions', [])
+
+            questions = []
+            if isinstance(data, dict) and 'questions' in data:
+                # Original format: {"questions": [...]}
+                questions = data['questions']
+            elif isinstance(data, list):
+                # New format: [...]
+                questions = data
+            else:
+                print(f"Warning: Unrecognized JSON format in {filepath}. Skipping.")
+                return
 
             imported_count = 0
             for question_data in questions:
+                # Try to infer subject from filename if not present in data
+                if 'subject' not in question_data:
+                    filename_subject = os.path.basename(filepath).split('_')[0].lower()
+                    if filename_subject in ['biology', 'chemistry', 'physics', 'mathematics']:
+                         question_data['subject'] = filename_subject
+
                 question_data['source_filename'] = os.path.basename(filepath)
                 if add_question(question_data):
                     imported_count += 1
