@@ -69,6 +69,20 @@ Once you have your token, set it as an environment variable.
   set TELEGRAM_BOT_TOKEN="YOUR_TOKEN_HERE"
   ```
 
+### 4. (Optional) Configure a Proxy
+
+If you need to run the bot through a proxy, you can set the `TELEGRAM_PROXY_URL` environment variable. The bot supports both HTTP and SOCKS5 proxies.
+
+- **On Linux/macOS:**
+  ```bash
+  export TELEGRAM_PROXY_URL="socks5h://user:pass@host:port"
+  ```
+
+- **On Windows (Command Prompt):**
+  ```bash
+  set TELEGRAM_PROXY_URL="socks5h://user:pass@host:port"
+  ```
+
 ## Usage Workflow
 
 Follow this workflow to get the system up and running with your own data.

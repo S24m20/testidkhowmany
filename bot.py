@@ -11,7 +11,7 @@ from telegram.ext import (
     PollAnswerHandler,
     filters,
 )
-from config import TELEGRAM_BOT_TOKEN
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
 from database import (
     get_or_create_user,
     get_distinct_subjects,
@@ -152,10 +152,14 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     correct_option_id = poll_data['correct_option_id']
     question_id = poll_data['question_id']
-    selected_option_id = poll_answer.option_ids[0]
 
-    if selected_option_id == correct_option_id:
-        context.user_data["score"] += 1
+    if not poll_answer.option_ids:
+        # User retracted their vote, so we can't score it.
+        logger.info(f"User {poll_answer.user.id} retracted their vote for poll {poll_id}")
+    else:
+        selected_option_id = poll_answer.option_ids[0]
+        if selected_option_id == correct_option_id:
+            context.user_data["score"] += 1
 
     keyboard = [
         [InlineKeyboardButton("Flag This Question", callback_data=f"flag_{question_id}")],
@@ -220,7 +224,13 @@ def main() -> None:
         logger.warning("Telegram bot token is not set. The bot will not run.")
         return
 
-    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    builder = Application.builder().token(TELEGRAM_BOT_TOKEN)
+
+    if TELEGRAM_PROXY_URL:
+        logger.info(f"Using proxy: {TELEGRAM_PROXY_URL}")
+        builder.proxy_url(TELEGRAM_PROXY_URL)
+
+    application = builder.build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],

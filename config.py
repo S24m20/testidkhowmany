@@ -5,6 +5,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'quiz_database.db')
 
 # Telegram Bot configuration
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+TELEGRAM_PROXY_URL = os.getenv('TELEGRAM_PROXY_URL')  # URL for the proxy (e.g., socks5h://user:pass@host:port)
 
 # Streamlit configuration
 STREAMLIT_SERVER_PORT = 8501
