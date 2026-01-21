@@ -311,5 +311,19 @@ def get_classification_stats():
         "by_review": {('Needs Review' if row['needs_review'] else 'Reviewed'): row['count'] for row in by_review}
     }
 
+def flag_question(question_id):
+    """Flags a question for review from the Telegram bot."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE questions
+    SET
+        needs_review = ?,
+        review_priority = ?
+    WHERE id = ?
+    ''', (True, "High (User Flagged)", question_id))
+    conn.commit()
+    conn.close()
+
 if __name__ == '__main__':
     initialize_database()

@@ -1,6 +1,13 @@
-# Ethiopian Educational Quiz System
+# Ethiopian Educational Quiz System (v2)
 
 This project is a complete, end-to-end system for classifying educational questions, storing them in a database, and delivering them as quizzes via a Telegram bot. It includes an AI-powered classifier tailored for the Ethiopian curriculum and a web-based interface for reviewing and editing the classifications.
+
+**Note:** This version introduces a new user-facing flagging feature. These changes are fully backward-compatible. No changes to your database schema or setup are required.
+
+## What's New in v2
+
+- **User-Facing Question Flagging:** Users taking a quiz on Telegram can now flag questions they believe are incorrect or have issues.
+- **Enhanced Review Interface:** The Streamlit review app now displays a `review_priority` column, making it easy for administrators to find and prioritize user-flagged questions.
 
 ## Key Features
 
@@ -102,18 +109,11 @@ You can run the Streamlit review app and the Telegram bot simultaneously.
     ```bash
     streamlit run review_app.py
     ```
-    You can then access the interface in your browser at `http://localhost:8501`.
+    You can then access the interface in your browser at `http://localhost:8501`. In the main table, you can now see the `review_priority` column. Look for questions marked as `"High (User Flagged)"` to find the ones that users have flagged.
 
 2.  **Run the Telegram Bot:**
     This will start the quiz bot.
     ```bash
     python bot.py
     ```
-    Open your Telegram app, find your bot, and send the `/start` command to begin a quiz.
-
-## Component Details
-
-- **`importer.py`**: A script that reads JSON files from the `extracted/` folder, handles different formats, infers subjects from filenames, and loads the questions into the database. It uses a hash to prevent duplicate questions.
-- **`classifier.py`**: The core of the AI system. It uses a pre-trained sentence transformer model to calculate the semantic similarity between a question and the curriculum objectives. It combines this with keyword matching to produce a final confidence score.
-- **`review_app.py`**: A web-based dashboard built with Streamlit. It provides visual analytics on the classification results and allows an administrator to review low-confidence questions, manually correct their classification, and save the changes to the database.
-- **`bot.py`**: A conversational Telegram bot that guides users through the process of selecting a subject, grade, and unit to generate a quiz. It uses Telegram's native quiz polls for a smooth user experience and tracks user scores over time.
+    Open your Telegram app, find your bot, and send the `/start` command to begin a quiz. After you answer a question, you will see a "Flag This Question" button.

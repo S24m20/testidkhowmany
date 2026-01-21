@@ -1,7 +1,9 @@
 import logging
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     ConversationHandler,
@@ -17,6 +19,7 @@ from database import (
     get_available_units_for_grade,
     get_quiz_questions,
     update_user_stats,
+    flag_question,
 )
 import json
 
@@ -125,36 +128,68 @@ async def ask_question(context: ContextTypes.DEFAULT_TYPE) -> int:
         correct_option_id=correct_option_id
     )
 
-    # Store the correct answer ID in bot_data for later verification
+    # Store the correct answer ID and question ID in bot_data for later verification
     if not hasattr(context.bot_data, 'poll_answers'):
         context.bot_data.poll_answers = {}
-    context.bot_data.poll_answers[message.poll.id] = correct_option_id
+    context.bot_data.poll_answers[message.poll.id] = {
+        'correct_option_id': correct_option_id,
+        'question_id': question['id']
+    }
 
     return QUIZ
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the user's answer to a quiz question via PollAnswer."""
+    """Handles the user's answer and asks if they want to flag the question."""
     poll_answer = update.poll_answer
     poll_id = poll_answer.poll_id
 
-    # Retrieve the correct answer ID from bot_data
-    correct_option_id = context.bot_data.poll_answers.get(poll_id)
+    poll_data = context.bot_data.poll_answers.get(poll_id)
+    if poll_data is None:
+        logger.warning(f"Could not find data for poll_id: {poll_id}")
+        context.user_data["current_question"] += 1
+        return await ask_question(context)
 
-    if correct_option_id is None:
-        logger.warning(f"Could not find correct answer for poll_id: {poll_id}")
-        return QUIZ # Stay in the same state, maybe log this error
-
+    correct_option_id = poll_data['correct_option_id']
+    question_id = poll_data['question_id']
     selected_option_id = poll_answer.option_ids[0]
 
     if selected_option_id == correct_option_id:
         context.user_data["score"] += 1
 
-    context.user_data["current_question"] += 1
+    keyboard = [
+        [InlineKeyboardButton("Flag This Question", callback_data=f"flag_{question_id}")],
+        [InlineKeyboardButton("Next Question", callback_data="skip_flag")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Clean up the stored answer to prevent memory bloat
+    chat_id = context.user_data["chat_id"]
+    await context.bot.send_message(chat_id, "Any issues with this question? You can flag it for review.", reply_markup=reply_markup)
+
     del context.bot_data.poll_answers[poll_id]
 
+    return QUIZ
+
+async def flag_question_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Flags a question and moves to the next one."""
+    query = update.callback_query
+    await query.answer()
+
+    question_id = int(query.data.split('_')[1])
+    flag_question(question_id)
+
+    await query.edit_message_text(text="Question has been flagged for review. Thank you!")
+
+    context.user_data["current_question"] += 1
+    return await ask_question(context)
+
+async def skip_flag(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Skips the flagging and moves to the next question."""
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(text="Moving to the next question...")
+
+    context.user_data["current_question"] += 1
     return await ask_question(context)
 
 async def end_quiz(context: ContextTypes.DEFAULT_TYPE, telegram_id: int) -> int:
@@ -193,7 +228,11 @@ def main() -> None:
             SUBJECT: [MessageHandler(filters.TEXT & ~filters.COMMAND, subject)],
             GRADE: [MessageHandler(filters.TEXT & ~filters.COMMAND, grade)],
             UNIT: [MessageHandler(filters.TEXT & ~filters.COMMAND, unit)],
-            QUIZ: [PollAnswerHandler(handle_answer)],
+            QUIZ: [
+                PollAnswerHandler(handle_answer),
+                CallbackQueryHandler(flag_question_callback, pattern="^flag_"),
+                CallbackQueryHandler(skip_flag, pattern="^skip_flag$"),
+            ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )

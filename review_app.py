@@ -77,7 +77,7 @@ def main():
         return
 
     df = pd.DataFrame([dict(q) for q in questions])
-    st.dataframe(df[['id', 'question_text', 'subject', 'grade', 'unit', 'subunit', 'classification_confidence', 'needs_review']])
+    st.dataframe(df[['id', 'question_text', 'subject', 'grade', 'unit', 'subunit', 'classification_confidence', 'needs_review', 'review_priority']])
 
     st.subheader("Edit Question Classification")
     question_id_to_edit = st.number_input("Enter Question ID to Edit", min_value=1, step=1)
